@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>無界茶台 - CRM管理系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+        
+        /* 布局 */
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* 侧边栏 */
+        .sidebar {
+            width: 220px;
+            background: #1a1a2e;
+            color: #fff;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .logo {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .logo h1 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #c9a45c;
+        }
+        
+        .logo p {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+        
+        .nav-menu {
+            padding: 15px 0;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+        }
+        
+        .nav-item:hover, .nav-item.active {
+            background: rgba(201, 164, 92, 0.1);
+            border-left-color: #c9a45c;
+        }
+        
+        .nav-item i {
+            width: 20px;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        
+        /* 主内容区 */
+        .main-content {
+            flex: 1;
+            margin-left: 220px;
+            padding: 20px;
+        }
+        
+        /* 顶部栏 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: #fff;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .header h2 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-info span {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .logout-btn {
+            padding: 6px 15px;
+            background: #f5f5f5;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #666;
+        }
+        
+        .logout-btn:hover {
+            background: #e0e0e0;
+        }
+        
+        /* 统计卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .stat-card h3 {
+            font-size: 13px;
+            color: #888;
+            font-weight: normal;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .number {
+            font-size: 28px;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+        
+        .stat-card .trend {
+            font-size: 12px;
+            color: #52c41a;
+            margin-top: 5px;
+        }
+        
+        /* 内容卡片 */
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        /* 表格 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .data-table th, .data-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .data-table th {
+            font-weight: 600;
+            color: #666;
+            font-size: 13px;
+            background: #fafafa;
+        }
+        
+        .data-table tr:hover {
+            background: #fafafa;
+        }
+        
+        /* 按钮 */
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #c9a45c;
+            color: #fff;
+        }
+        
+        .btn-primary:hover {
+            background: #b8944d;
+        }
+        
+        .btn-success {
+            background: #52c41a;
+            color: #fff;
+        }
+        
+        .btn-danger {
+            background: #ff4d4f;
+            color: #fff;
+        }
+        
+        .btn-sm {
+            padding: 4px 12px;
+            font-size: 12px;
+        }
+        
+        /* 标签 */
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .tag-warning {
+            background: #fff7e6;
+            color: #fa8c16;
+        }
+        
+        .tag-success {
+            background: #f6ffed;
+            color: #52c41a;
+        }
+        
+        .tag-info {
+            background: #e6f7ff;
+            color: #1890ff;
+        }
+        
+        /* 状态标签 */
+        .status-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .status-pending {
+            background: #fff7e6;
+            color: #fa8c16;
+        }
+        
+        .status-contacted {
+            background: #e6f7ff;
+            color: #1890ff;
+        }
+        
+        .status-quoted {
+            background: #f6ffed;
+            color: #52c41a;
+        }
+        
+        .status-closed {
+            background: #f5f5f5;
+            color: #999;
+        }
+        
+        /* 登录页 */
+        .login-page {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        }
+        
+        .login-box {
+            background: #fff;
+            padding: 40px;
+            border-radius: 8px;
+            width: 400px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        .login-box h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #1a1a2e;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus, .form-group select:focus {
+            border-color: #c9a45c;
+            outline: none;
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: #c9a45c;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .login-btn:hover {
+            background: #b8944d;
+        }
+        
+        .error-msg {
+            color: #ff4d4f;
+            font-size: 13px;
+            margin-top: 10px;
+            text-align: center;
+        }
+        
+        /* 隐藏 */
+        .hidden {
+            display: none !important;
+        }
+        
+        /* 加载中 */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+        
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #ddd;
+        }
+        
+        /* 复选框 */
+        input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        
+        /* 模态框 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: #fff;
+            border-radius: 8px;
+            width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h3 {
+            font-size: 16px;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 登录页 -->
+    <div id="loginPage" class="login-page">
+        <div class="login-box">
+            <h2>無界茶台 CRM系统</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>用户名</label>
+                    <input type="text" id="username" placeholder="请输入用户名" required>
+                </div>
+                <div class="form-group">
+                    <label>密码</label>
+                    <input type="password" id="password" placeholder="请输入密码" required>
+                </div>
+                <button type="submit" class="login-btn">登录</button>
+                <div id="loginError" class="error-msg hidden"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 主应用 -->
+    <div id="app" class="layout hidden">
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h1>無界茶台</h1>
+                <p>CRM管理系统</p>
+            </div>
+            <nav class="nav-menu">
+                <div class="nav-item active" data-page="dashboard">
+                    <span>📊</span> 仪表盘
+                </div>
+                <div class="nav-item" data-page="unassigned">
+                    <span>📋</span> 待分配客户
+                </div>
+                <div class="nav-item" data-page="customers">
+                    <span>👥</span> 全部客户
+                </div>
+                <div class="nav-item" data-page="sales">
+                    <span>🎯</span> 销售管理
+                </div>
+            </nav>
+        </aside>
+
+        <!-- 主内容 -->
+        <main class="main-content">
+            <!-- 顶部栏 -->
+            <div class="header">
+                <h2 id="pageTitle">仪表盘</h2>
+                <div class="user-info">
+                    <span id="userName">管理员</span>
+                    <button class="logout-btn" onclick="logout()">退出</button>
+                </div>
+            </div>
+
+            <!-- 仪表盘页面 -->
+            <div id="dashboardPage" class="page">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>今日新增</h3>
+                        <div class="number" id="statTodayNew">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>待分配</h3>
+                        <div class="number" id="statUnassigned">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>总客户</h3>
+                        <div class="number" id="statTotal">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>已成交</h3>
+                        <div class="number" id="statClosed">0</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3>销售排行榜</h3>
+                    </div>
+                    <div class="card-body">
+                        <table class="data-table" id="salesRankingTable">
+                            <thead>
+                                <tr>
+                                    <th>排名</th>
+                                    <th>销售</th>
+                                    <th>客户数</th>
+                                    <th>跟进数</th>
+                                    <th>成交数</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 待分配客户页面 -->
+            <div id="unassignedPage" class="page hidden">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>待分配客户</h3>
+                        <div>
+                            <button class="btn btn-primary" onclick="showBatchAssignModal()">批量分配</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <table class="data-table" id="unassignedTable">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="selectAll"></th>
+                                    <th>ID</th>
+                                    <th>客户姓名</th>
+                                    <th>电话</th>
+                                    <th>产品意向</th>
+                                    <th>提交时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 全部客户页面 -->
+            <div id="customersPage" class="page hidden">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>全部客户</h3>
+                    </div>
+                    <div class="card-body">
+                        <table class="data-table" id="customersTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>客户姓名</th>
+                                    <th>电话</th>
+                                    <th>产品意向</th>
+                                    <th>分配销售</th>
+                                    <th>状态</th>
+                                    <th>提交时间</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 销售管理页面 -->
+            <div id="salesPage" class="page hidden">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>销售列表</h3>
+                        <button class="btn btn-primary" onclick="showAddSalesModal()">添加销售</button>
+                    </div>
+                    <div class="card-body">
+                        <table class="data-table" id="salesTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>姓名</th>
+                                    <th>电话</th>
+                                    <th>每日上限</th>
+                                    <th>状态</th>
+                                    <th>客户数</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 分配客户模态框 -->
+    <div id="assignModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>分配客户</h3>
+                <button class="modal-close" onclick="closeModal('assignModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>选择销售</label>
+                    <select id="assignSalesSelect"></select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal('assignModal')">取消</button>
+                <button class="btn btn-primary" onclick="confirmAssign()">确认分配</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API 基础地址
+        const API_BASE = '/api';
+        let token = localStorage.getItem('crm_token');
+        let currentUser = null;
+        let salesList = [];
+        let selectedBookings = [];
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            if (token) {
+                showApp();
+            } else {
+                showLogin();
+            }
+
+            // 登录表单
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+
+            // 导航切换
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', () => switchPage(item.dataset.page));
+            });
+
+            // 全选复选框
+            document.getElementById('selectAll')?.addEventListener('change', handleSelectAll);
+        });
+
+        // 登录
+        async function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const res = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    token = data.data.token;
+                    currentUser = data.data.user;
+                    localStorage.setItem('crm_token', token);
+                    showApp();
+                } else {
+                    showError(data.message);
+                }
+            } catch (err) {
+                showError('登录失败，请检查网络');
+            }
+        }
+
+        // 显示登录页
+        function showLogin() {
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('app').classList.add('hidden');
+        }
+
+        // 显示应用
+        function showApp() {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('app').classList.remove('hidden');
+            document.getElementById('userName').textContent = currentUser?.name || '管理员';
+            loadDashboard();
+        }
+
+        // 退出
+        function logout() {
+            localStorage.removeItem('crm_token');
+            token = null;
+            currentUser = null;
+            showLogin();
+        }
+
+        // 显示错误
+        function showError(msg) {
+            const el = document.getElementById('loginError');
+            el.textContent = msg;
+            el.classList.remove('hidden');
+        }
+
+        // 切换页面
+        function switchPage(page) {
+            // 更新导航
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.page === page);
+            });
+
+            // 更新页面标题
+            const titles = {
+                dashboard: '仪表盘',
+                unassigned: '待分配客户',
+                customers: '全部客户',
+                sales: '销售管理'
+            };
+            document.getElementById('pageTitle').textContent = titles[page];
+
+            // 显示对应页面
+            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+            document.getElementById(page + 'Page').classList.remove('hidden');
+
+            // 加载数据
+            if (page === 'dashboard') loadDashboard();
+            if (page === 'unassigned') loadUnassigned();
+            if (page === 'customers') loadCustomers();
+            if (page === 'sales') loadSales();
+        }
+
+        // API 请求封装
+        async function api(url, options = {}) {
+            const res = await fetch(API_BASE + url, {
+                ...options,
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                }
+            });
+            return res.json();
+        }
+
+        // 加载仪表盘
+        async function loadDashboard() {
+            const data = await api('/admin/dashboard');
+            if (data.success) {
+                document.getElementById('statTodayNew').textContent = data.data.today_new;
+                document.getElementById('statUnassigned').textContent = data.data.unassigned;
+                document.getElementById('statTotal').textContent = data.data.booking_stats.total;
+                document.getElementById('statClosed').textContent = data.data.booking_stats.closed;
+
+                // 销售排行榜
+                const tbody = document.querySelector('#salesRankingTable tbody');
+                tbody.innerHTML = data.data.sales_stats.map((s, i) => `
+                    <tr>
+                        <td>${i + 1}</td>
+                        <td>${s.name}</td>
+                        <td>${s.stats.total_customers}</td>
+                        <td>${s.stats.total_follow_ups}</td>
+                        <td>${s.stats.closed}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        // 加载待分配客户
+        async function loadUnassigned() {
+            const data = await api('/admin/bookings/unassigned');
+            if (data.success) {
+                const tbody = document.querySelector('#unassignedTable tbody');
+                tbody.innerHTML = data.data.map(b => `
+                    <tr>
+                        <td><input type="checkbox" value="${b.id}" class="booking-checkbox"></td>
+                        <td>${b.id}</td>
+                        <td>${b.customer_name}</td>
+                        <td>${b.customer_phone}</td>
+                        <td>${getProductName(b.product_series)} ${b.product_model}</td>
+                        <td>${formatDate(b.created_at)}</td>
+                        <td>
+                            <button class="btn btn-success btn-sm" onclick="showAssignModal(${b.id})">分配</button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                // 绑定复选框事件
+                document.querySelectorAll('.booking-checkbox').forEach(cb => {
+                    cb.addEventListener('change', updateSelectedBookings);
+                });
+            }
+        }
+
+        // 加载全部客户
+        async function loadCustomers() {
+            const data = await api('/bookings');
+            if (data.success) {
+                const tbody = document.querySelector('#customersTable tbody');
+                tbody.innerHTML = data.data.map(b => `
+                    <tr>
+                        <td>${b.id}</td>
+                        <td>${b.customer_name}</td>
+                        <td>${b.customer_phone}</td>
+                        <td>${getProductName(b.product_series)} ${b.product_model}</td>
+                        <td>${b.handler_name || '-'}</td>
+                        <td><span class="status-tag status-${b.status}">${getStatusText(b.status)}</span></td>
+                        <td>${formatDate(b.created_at)}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        // 加载销售列表
+        async function loadSales() {
+            const [salesRes, allBookings] = await Promise.all([
+                api('/admin/sales'),
+                api('/bookings?page=1&limit=1000')
+            ]);
+
+            if (salesRes.success) {
+                salesList = salesRes.data;
+                
+                // 统计每个销售的客户数
+                const salesCustomerCount = {};
+                if (allBookings.success) {
+                    allBookings.data.forEach(b => {
+                        if (b.assigned_to) {
+                            salesCustomerCount[b.assigned_to] = (salesCustomerCount[b.assigned_to] || 0) + 1;
+                        }
+                    });
+                }
+
+                const tbody = document.querySelector('#salesTable tbody');
+                tbody.innerHTML = salesRes.data.map(s => `
+                    <tr>
+                        <td>${s.id}</td>
+                        <td>${s.name}</td>
+                        <td>${s.phone || '-'}</td>
+                        <td>${s.daily_limit}</td>
+                        <td><span class="tag ${s.is_active ? 'tag-success' : 'tag-warning'}">${s.is_active ? '在职' : '离职'}</span></td>
+                        <td>${salesCustomerCount[s.id] || 0}</td>
+                        <td>
+                            <button class="btn btn-sm" onclick="editSales(${s.id})">编辑</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        // 显示分配模态框
+        async function showAssignModal(bookingId) {
+            selectedBookings = [bookingId];
+            await loadSalesSelect();
+            document.getElementById('assignModal').classList.remove('hidden');
+        }
+
+        // 显示批量分配模态框
+        async function showBatchAssignModal() {
+            if (selectedBookings.length === 0) {
+                alert('请至少选择一个客户');
+                return;
+            }
+            await loadSalesSelect();
+            document.getElementById('assignModal').classList.remove('hidden');
+        }
+
+        // 加载销售选择框
+        async function loadSalesSelect() {
+            const select = document.getElementById('assignSalesSelect');
+            select.innerHTML = salesList.filter(s => s.is_active).map(s => 
+                `<option value="${s.id}">${s.name} (今日已分配: 0/${s.daily_limit})</option>`
+            ).join('');
+        }
+
+        // 确认分配
+        async function confirmAssign() {
+            const salesId = document.getElementById('assignSalesSelect').value;
+            
+            const res = await api('/admin/bookings/assign-batch', {
+                method: 'POST',
+                body: JSON.stringify({
+                    booking_ids: selectedBookings,
+                    sales_id: parseInt(salesId)
+                })
+            });
+
+            if (res.success) {
+                alert(res.message);
+                closeModal('assignModal');
+                loadUnassigned();
+                selectedBookings = [];
+            } else {
+                alert(res.message || '分配失败');
+            }
+        }
+
+        // 关闭模态框
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        // 全选
+        function handleSelectAll(e) {
+            document.querySelectorAll('.booking-checkbox').forEach(cb => {
+                cb.checked = e.target.checked;
+            });
+            updateSelectedBookings();
+        }
+
+        // 更新选中客户
+        function updateSelectedBookings() {
+            selectedBookings = Array.from(document.querySelectorAll('.booking-checkbox:checked')).map(cb => parseInt(cb.value));
+        }
+
+        // 辅助函数
+        function getProductName(series) {
+            const names = { linhe: '悦·系列', shiyi: '艺·系列', chaoran: '永·系列', jiangshan: '隐·系列' };
+            return names[series] || series;
+        }
+
+        function getStatusText(status) {
+            const texts = { pending: '待处理', contacted: '已联系', quoted: '已报价', closed: '已关闭' };
+            return texts[status] || status;
+        }
+
+        function formatDate(date) {
+            return new Date(date).toLocaleString('zh-CN');
+        }
+
+        function showAddSalesModal() {
+            alert('添加销售功能开发中...');
+        }
+
+        function editSales(id) {
+            alert('编辑销售功能开发中...');
+        }
+    </script>
+</body>
+</html>

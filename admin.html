@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>無界茶台 - 管理后台</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+        .header {
+            background: #1a1a1a;
+            color: #c9a45c;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { font-size: 20px; font-weight: 500; }
+        .header .user { font-size: 14px; color: #999; }
+        .header .logout {
+            background: transparent;
+            border: 1px solid #c9a45c;
+            color: #c9a45c;
+            padding: 6px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .stat-card h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: normal;
+        }
+        .stat-card .number {
+            font-size: 32px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        .stat-card.pending .number { color: #c9a45c; }
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 24px;
+        }
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-header h2 { font-size: 16px; font-weight: 500; }
+        .card-body { padding: 20px; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            color: #666;
+            font-weight: 500;
+            background: #fafafa;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-contacted { background: #d1ecf1; color: #0c5460; }
+        .status-quoted { background: #d4edda; color: #155724; }
+        .status-closed { background: #f8d7da; color: #721c24; }
+        .btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            margin-right: 8px;
+        }
+        .btn-primary { background: #c9a45c; color: white; }
+        .btn-secondary { background: #e9ecef; color: #333; }
+        .login-form {
+            max-width: 400px;
+            margin: 100px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .login-form h2 {
+            text-align: center;
+            margin-bottom: 24px;
+            color: #1a1a1a;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #c9a45c;
+        }
+        .btn-block {
+            width: 100%;
+            padding: 12px;
+            background: #c9a45c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .btn-block:hover { background: #b08d4b; }
+        .error {
+            color: #dc3545;
+            font-size: 14px;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .hidden { display: none !important; }
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .filter-bar select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 登录页面 -->
+    <div id="loginPage" class="login-form">
+        <h2>無界茶台管理后台</h2>
+        <div id="loginError" class="error hidden"></div>
+        <div class="form-group">
+            <label>用户名</label>
+            <input type="text" id="username" placeholder="请输入用户名">
+        </div>
+        <div class="form-group">
+            <label>密码</label>
+            <input type="password" id="password" placeholder="请输入密码">
+        </div>
+        <button class="btn-block" onclick="login()">登录</button>
+    </div>
+
+    <!-- 管理页面 -->
+    <div id="adminPage" class="hidden">
+        <div class="header">
+            <h1>無界茶台 - 管理后台</h1>
+            <div>
+                <span class="user" id="userInfo"></span>
+                <button class="logout" onclick="logout()">退出</button>
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- 统计卡片 -->
+            <div class="stats">
+                <div class="stat-card pending">
+                    <h3>待处理预约</h3>
+                    <div class="number" id="statPending">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>今日新增</h3>
+                    <div class="number" id="statToday">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>总预约数</h3>
+                    <div class="number" id="statTotal">0</div>
+                </div>
+            </div>
+
+            <!-- 预约列表 -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>预约管理</h2>
+                    <button class="btn btn-primary" onclick="loadBookings()">刷新</button>
+                </div>
+                <div class="card-body">
+                    <div class="filter-bar">
+                        <select id="statusFilter" onchange="loadBookings()">
+                            <option value="">全部状态</option>
+                            <option value="pending">待处理</option>
+                            <option value="contacted">已联系</option>
+                            <option value="quoted">已报价</option>
+                            <option value="closed">已关闭</option>
+                        </select>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>客户姓名</th>
+                                <th>联系电话</th>
+                                <th>产品系列</th>
+                                <th>状态</th>
+                                <th>提交时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bookingsTable">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+        let token = localStorage.getItem('admin_token');
+
+        // 检查登录状态
+        if (token) {
+            showAdminPage();
+            loadStats();
+            loadBookings();
+        }
+
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('loginError');
+
+            fetch(`${API_BASE}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    token = data.data.token;
+                    localStorage.setItem('admin_token', token);
+                    showAdminPage();
+                    loadStats();
+                    loadBookings();
+                } else {
+                    errorDiv.textContent = data.message || '登录失败';
+                    errorDiv.classList.remove('hidden');
+                }
+            })
+            .catch(err => {
+                errorDiv.textContent = '网络错误';
+                errorDiv.classList.remove('hidden');
+            });
+        }
+
+        function logout() {
+            localStorage.removeItem('admin_token');
+            token = null;
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('adminPage').classList.add('hidden');
+        }
+
+        function showAdminPage() {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('adminPage').classList.remove('hidden');
+        }
+
+        function loadStats() {
+            fetch(`${API_BASE}/bookings/stats`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('statPending').textContent = data.data.pending || 0;
+                    document.getElementById('statTotal').textContent = data.data.total || 0;
+                }
+            });
+        }
+
+        function loadBookings() {
+            const status = document.getElementById('statusFilter').value;
+            const url = status ? `${API_BASE}/bookings?status=${status}` : `${API_BASE}/bookings`;
+
+            fetch(url, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    renderBookings(data.data);
+                }
+            });
+        }
+
+        function renderBookings(bookings) {
+            const tbody = document.getElementById('bookingsTable');
+            tbody.innerHTML = bookings.map(b => `
+                <tr>
+                    <td>${b.id}</td>
+                    <td>${b.customer_name}</td>
+                    <td>${b.customer_phone}</td>
+                    <td>${b.product_series}</td>
+                    <td><span class="status status-${b.status}">${getStatusText(b.status)}</span></td>
+                    <td>${new Date(b.created_at).toLocaleString()}</td>
+                    <td>
+                        <button class="btn btn-secondary" onclick="viewDetail(${b.id})">查看</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function getStatusText(status) {
+            const map = { pending: '待处理', contacted: '已联系', quoted: '已报价', closed: '已关闭' };
+            return map[status] || status;
+        }
+
+        function viewDetail(id) {
+            alert('查看详情功能开发中，ID: ' + id);
+        }
+
+        // 回车登录
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') login();
+        });
+    </script>
+</body>
+</html>

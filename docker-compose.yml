@@ -1,0 +1,17 @@
+services:
+  backend:
+    build: .
+    container_name: wujie-backend
+    restart: always
+    network_mode: host
+    environment:
+      - DB_HOST=127.0.0.1
+      - DB_PORT=3306
+      - DB_NAME=wujie_tea
+      - DB_USER=root
+      - DB_PASSWORD=${DB_PASSWORD:-Wujie@2024}
+      - JWT_SECRET=${JWT_SECRET:-wujie-tea-secret-key-2024}
+      - JWT_EXPIRES_IN=24h
+      - PORT=3000
+      - NODE_ENV=production
+      - FRONTEND_URL=${FRONTEND_URL:-https://www.wujietest.com}
