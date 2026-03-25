@@ -3,7 +3,7 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const { generateToken, authenticateToken } = require('../middleware/auth');
 const UserModel = require('../models/User');
-const LogModel = require('../models/Log');
+const { LogModel } = require('../models/Log');
 
 // 登录
 router.post('/login', [

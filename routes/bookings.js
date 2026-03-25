@@ -3,7 +3,7 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const { authenticateToken, requireRole } = require('../middleware/auth');
 const BookingModel = require('../models/Booking');
-const LogModel = require('../models/Log');
+const { LogModel } = require('../models/Log');
 
 // 公开接口：创建预约
 router.post('/', [
@@ -23,7 +23,12 @@ router.post('/', [
             });
         }
 
-        const { customer_name, customer_phone, product_series, product_model, marble_type, estimated_price } = req.body;
+        const { 
+            customer_name, customer_phone, product_series, product_model, marble_type, estimated_price,
+            visitor_id, device_type, device_model, os, browser, page_url
+        } = req.body;
+
+        const ip_address = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
         const bookingId = await BookingModel.create({
             customer_name,
@@ -31,7 +36,14 @@ router.post('/', [
             product_series,
             product_model,
             marble_type,
-            estimated_price: estimated_price || null
+            estimated_price: estimated_price || null,
+            visitor_id: visitor_id || null,
+            ip_address: ip_address || null,
+            device_type: device_type || null,
+            device_model: device_model || null,
+            os: os || null,
+            browser: browser || null,
+            page_url: page_url || null
         });
 
         res.status(201).json({
@@ -88,7 +100,7 @@ router.get('/stats', async (req, res) => {
     }
 });
 
-// 获取单个预约
+// 获取单个预约（包含访客历史记录）
 router.get('/:id', async (req, res) => {
     try {
         const booking = await BookingModel.findById(req.params.id);
@@ -99,9 +111,20 @@ router.get('/:id', async (req, res) => {
             });
         }
 
+        // 如果有访客ID，获取该访客的所有访问记录
+        let visitorLogs = [];
+        if (booking.visitor_id) {
+            const { LogModel } = require('../models/Log');
+            const visitorDetail = await LogModel.getVisitorDetail(booking.visitor_id);
+            visitorLogs = visitorDetail.logs || [];
+        }
+
         res.json({
             success: true,
-            data: booking
+            data: {
+                ...booking,
+                visitor_logs: visitorLogs
+            }
         });
     } catch (error) {
         console.error('获取预约详情错误:', error);

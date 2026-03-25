@@ -2,11 +2,20 @@ const { pool } = require('../config/database');
 
 class BookingModel {
     // 创建预约
-    static async create({ customer_name, customer_phone, product_series, product_model, marble_type, estimated_price }) {
+    static async create({ 
+        customer_name, customer_phone, product_series, product_model, marble_type, estimated_price,
+        visitor_id, ip_address, device_type, device_model, os, browser, page_url
+    }) {
         const [result] = await pool.execute(
-            `INSERT INTO bookings (customer_name, customer_phone, product_series, product_model, marble_type, estimated_price) 
-             VALUES (?, ?, ?, ?, ?, ?)`,
-            [customer_name, customer_phone, product_series, product_model, marble_type, estimated_price]
+            `INSERT INTO bookings (
+                customer_name, customer_phone, product_series, product_model, marble_type, estimated_price,
+                visitor_id, ip_address, device_type, device_model, os, browser, page_url
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                customer_name, customer_phone, product_series, product_model, marble_type, estimated_price,
+                visitor_id || null, ip_address || null, device_type || null, device_model || null, 
+                os || null, browser || null, page_url || null
+            ]
         );
         return result.insertId;
     }
@@ -62,6 +71,15 @@ class BookingModel {
             [id]
         );
         return rows[0] || null;
+    }
+
+    // 根据 visitor_id 获取该访客的所有预约
+    static async findByVisitorId(visitor_id) {
+        const [rows] = await pool.execute(
+            `SELECT * FROM bookings WHERE visitor_id = ? ORDER BY created_at DESC`,
+            [visitor_id]
+        );
+        return rows;
     }
 
     // 更新预约
