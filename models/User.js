@@ -29,7 +29,7 @@ class UserModel {
     }
 
     // 创建用户
-    static async create({ username, password, role = 'staff', name, phone, email }) {
+    static async create({ username, password, role = 'sales', name, phone, email }) {
         const hashedPassword = await bcrypt.hash(password, 10);
         const [result] = await pool.execute(
             'INSERT INTO users (username, password, role, name, phone, email) VALUES (?, ?, ?, ?, ?, ?)',
