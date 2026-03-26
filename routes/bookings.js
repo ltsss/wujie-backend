@@ -67,7 +67,11 @@ router.use(authenticateToken);
 router.get('/', async (req, res) => {
     try {
         const { status, page, limit } = req.query;
-        const result = await BookingModel.findAll({ status, page, limit });
+
+        // 销售只能看到自己负责的客户
+        const assignedTo = req.user.role === 'sales' ? req.user.id : null;
+
+        const result = await BookingModel.findAll({ status, page, limit, assignedTo });
 
         res.json({
             success: true,
@@ -76,9 +80,9 @@ router.get('/', async (req, res) => {
         });
     } catch (error) {
         console.error('获取预约列表错误:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: '服务器错误' 
+        res.status(500).json({
+            success: false,
+            message: '服务器错误'
         });
     }
 });

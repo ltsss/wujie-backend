@@ -21,7 +21,7 @@ class BookingModel {
     }
 
     // 获取所有预约
-    static async findAll({ status, page = 1, limit = 20 }) {
+    static async findAll({ status, page = 1, limit = 20, assignedTo = null }) {
         let whereClause = '';
         const params = [];
 
@@ -30,16 +30,22 @@ class BookingModel {
             params.push(status);
         }
 
+        // 销售只能看到自己负责的客户
+        if (assignedTo) {
+            whereClause = whereClause ? whereClause + ' AND b.assigned_to = ?' : 'WHERE b.assigned_to = ?';
+            params.push(assignedTo);
+        }
+
         const pageNum = parseInt(page) || 1;
         const limitNum = parseInt(limit) || 20;
         const offset = (pageNum - 1) * limitNum;
-        
+
         const [rows] = await pool.execute(
-            `SELECT b.*, u.name as handler_name 
-             FROM bookings b 
-             LEFT JOIN users u ON b.handled_by = u.id 
+            `SELECT b.*, u.name as handler_name
+             FROM bookings b
+             LEFT JOIN users u ON b.handled_by = u.id
              ${whereClause}
-             ORDER BY b.created_at DESC 
+             ORDER BY b.created_at DESC
              LIMIT ${limitNum} OFFSET ${offset}`,
             params
         );

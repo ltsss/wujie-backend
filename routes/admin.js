@@ -8,8 +8,79 @@ const AssignmentModel = require('../models/Assignment');
 const BookingModel = require('../models/Booking');
 const FollowUpModel = require('../models/FollowUp');
 
-// 所有路由都需要管理员权限
-router.use(authenticateToken, requireRole('admin'));
+// 所有路由都需要认证
+router.use(authenticateToken);
+
+// ========== 仪表盘（管理员和销售都可以访问）==========
+router.get('/dashboard', async (req, res) => {
+    try {
+        const isSales = req.user.role === 'sales';
+        const userId = req.user.id;
+
+        // 客户统计
+        let bookingStats;
+        if (isSales) {
+            // 销售只看自己的数据
+            const [rows] = await pool.execute(
+                `SELECT
+                    COUNT(*) as total,
+                    SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+                    SUM(CASE WHEN status = 'contacted' THEN 1 ELSE 0 END) as contacted,
+                    SUM(CASE WHEN status = 'quoted' THEN 1 ELSE 0 END) as quoted,
+                    SUM(CASE WHEN status = 'closed' THEN 1 ELSE 0 END) as closed
+                 FROM bookings WHERE assigned_to = ?`,
+                [userId]
+            );
+            bookingStats = rows[0];
+        } else {
+            bookingStats = await BookingModel.getStats();
+        }
+
+        // 今日新增
+        const todayCondition = isSales ? 'AND assigned_to = ?' : '';
+        const todayParams = isSales ? [userId] : [];
+        const [todayResult] = await pool.execute(
+            `SELECT COUNT(*) as count FROM bookings WHERE DATE(created_at) = CURDATE() ${todayCondition}`,
+            todayParams
+        );
+
+        // 待分配（仅管理员）
+        let unassigned = 0;
+        if (!isSales) {
+            const unassignedData = await AssignmentModel.getUnassigned({ page: 1, limit: 1 });
+            unassigned = unassignedData.pagination.total;
+        }
+
+        // 销售列表及统计（仅管理员）
+        let salesStats = [];
+        if (!isSales) {
+            const salesList = await SalesModel.findAll({ is_active: true });
+            for (const sales of salesList) {
+                const stats = await SalesModel.getStats(sales.id);
+                salesStats.push({ ...sales, stats });
+            }
+        }
+
+        res.json({
+            success: true,
+            data: {
+                today_new: todayResult[0].count,
+                unassigned: unassigned,
+                total_bookings: bookingStats.total,
+                pending: bookingStats.pending,
+                booking_stats: bookingStats,
+                sales_stats: salesStats,
+                is_sales: isSales
+            }
+        });
+    } catch (error) {
+        console.error('获取仪表盘数据错误:', error);
+        res.status(500).json({ success: false, message: '服务器错误' });
+    }
+});
+
+// ========== 以下路由仅管理员可访问 ==========
+router.use(requireRole('admin'));
 
 // ========== 销售管理 ==========
 
@@ -226,45 +297,6 @@ router.post('/bookings/reassign', [
         res.json({ success: true, message: '重新分配成功' });
     } catch (error) {
         console.error('重新分配客户错误:', error);
-        res.status(500).json({ success: false, message: '服务器错误' });
-    }
-});
-
-// ========== 统计报表 ==========
-
-// 获取整体统计
-router.get('/dashboard', async (req, res) => {
-    try {
-        // 客户统计
-        const bookingStats = await BookingModel.getStats();
-        
-        // 今日新增
-        const [todayResult] = await pool.execute(
-            `SELECT COUNT(*) as count FROM bookings WHERE DATE(created_at) = CURDATE()`
-        );
-        
-        // 待分配
-        const unassigned = await AssignmentModel.getUnassigned({ page: 1, limit: 1 });
-        
-        // 销售列表及统计
-        const salesList = await SalesModel.findAll({ is_active: true });
-        const salesStats = [];
-        for (const sales of salesList) {
-            const stats = await SalesModel.getStats(sales.id);
-            salesStats.push({ ...sales, stats });
-        }
-
-        res.json({
-            success: true,
-            data: {
-                today_new: todayResult[0].count,
-                unassigned: unassigned.pagination.total,
-                booking_stats: bookingStats,
-                sales_stats: salesStats
-            }
-        });
-    } catch (error) {
-        console.error('获取仪表盘数据错误:', error);
         res.status(500).json({ success: false, message: '服务器错误' });
     }
 });

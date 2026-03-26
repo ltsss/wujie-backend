@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
-const { generateToken, authenticateToken } = require('../middleware/auth');
+const { generateToken, authenticateToken, requireRole } = require('../middleware/auth');
 const UserModel = require('../models/User');
 const { LogModel } = require('../models/Log');
 
@@ -122,9 +122,138 @@ router.post('/logout', authenticateToken, async (req, res) => {
         });
     } catch (error) {
         console.error('登出错误:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: '服务器错误' 
+        res.status(500).json({
+            success: false,
+            message: '服务器错误'
+        });
+    }
+});
+
+// 注册新账号（仅管理员）
+router.post('/register', [
+    authenticateToken,
+    requireRole('admin'),
+    body('username').trim().notEmpty().withMessage('用户名不能为空').isLength({ min: 3, max: 20 }).withMessage('用户名长度3-20位'),
+    body('password').notEmpty().withMessage('密码不能为空').isLength({ min: 6 }).withMessage('密码至少6位'),
+    body('name').trim().notEmpty().withMessage('姓名不能为空'),
+    body('role').isIn(['admin', 'sales']).withMessage('角色必须是 admin 或 sales'),
+    body('phone').optional().trim(),
+    body('email').optional().trim().isEmail().withMessage('邮箱格式不正确')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({
+                success: false,
+                errors: errors.array()
+            });
+        }
+
+        const { username, password, name, role, phone, email } = req.body;
+
+        // 检查用户名是否已存在
+        const existingUser = await UserModel.findByUsername(username);
+        if (existingUser) {
+            return res.status(400).json({
+                success: false,
+                message: '用户名已存在'
+            });
+        }
+
+        // 创建用户
+        const userId = await UserModel.create({
+            username,
+            password,
+            name,
+            role,
+            phone,
+            email
+        });
+
+        // 记录日志
+        await LogModel.create({
+            user_id: req.user.id,
+            action: '创建账号',
+            details: `管理员 ${req.user.username} 创建了 ${role} 账号 ${username}`,
+            ip_address: req.ip
+        });
+
+        res.status(201).json({
+            success: true,
+            message: '账号创建成功',
+            data: { id: userId }
+        });
+    } catch (error) {
+        console.error('注册错误:', error);
+        res.status(500).json({
+            success: false,
+            message: '服务器错误'
+        });
+    }
+});
+
+// 获取所有用户列表（仅管理员）
+router.get('/users', authenticateToken, requireRole('admin'), async (req, res) => {
+    try {
+        const users = await UserModel.findAll();
+        res.json({
+            success: true,
+            data: users
+        });
+    } catch (error) {
+        console.error('获取用户列表错误:', error);
+        res.status(500).json({
+            success: false,
+            message: '服务器错误'
+        });
+    }
+});
+
+// 更新用户信息（仅管理员）
+router.put('/users/:id', [
+    authenticateToken,
+    requireRole('admin'),
+    body('name').optional().trim(),
+    body('role').optional().isIn(['admin', 'sales']),
+    body('is_active').optional().isBoolean(),
+    body('phone').optional().trim(),
+    body('email').optional().trim()
+], async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updates = {};
+
+        if (req.body.name) updates.name = req.body.name;
+        if (req.body.role) updates.role = req.body.role;
+        if (req.body.is_active !== undefined) updates.is_active = req.body.is_active;
+        if (req.body.phone) updates.phone = req.body.phone;
+        if (req.body.email) updates.email = req.body.email;
+        if (req.body.password) updates.password = req.body.password;
+
+        const success = await UserModel.update(id, updates);
+        if (!success) {
+            return res.status(404).json({
+                success: false,
+                message: '用户不存在'
+            });
+        }
+
+        await LogModel.create({
+            user_id: req.user.id,
+            action: '更新账号',
+            details: `管理员 ${req.user.username} 更新了用户ID ${id} 的信息`,
+            ip_address: req.ip
+        });
+
+        res.json({
+            success: true,
+            message: '更新成功'
+        });
+    } catch (error) {
+        console.error('更新用户错误:', error);
+        res.status(500).json({
+            success: false,
+            message: '服务器错误'
         });
     }
 });
