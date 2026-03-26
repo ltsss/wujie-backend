@@ -2,9 +2,10 @@ const { pool } = require('../config/database');
 
 class LogModel {
     // 创建日志
-    static async create({ 
+    static async create({
         visitor_id, session_id, action, details, ip_address,
-        device_type, device_model, os, browser, page_url, referrer, duration 
+        device_type, device_model, os, browser, page_url, referrer, duration,
+        country, region, city
     }) {
         // 确保所有参数都有值，undefined 转为 null
         const params = [
@@ -19,14 +20,18 @@ class LogModel {
             browser || null,
             page_url || null,
             referrer || null,
-            duration || null
+            duration || null,
+            country || null,
+            region || null,
+            city || null
         ];
-        
+
         await pool.execute(
-            `INSERT INTO logs 
+            `INSERT INTO logs
             (visitor_id, session_id, action, details, ip_address,
-             device_type, device_model, os, browser, page_url, referrer, duration) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             device_type, device_model, os, browser, page_url, referrer, duration,
+             country, region, city)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             params
         );
     }
@@ -153,15 +158,18 @@ class LogModel {
 // 访客管理
 class VisitorModel {
     // 创建或更新访客
-    static async track({ visitor_id, device_type, device_model, os, browser, ip_address }) {
+    static async track({ visitor_id, device_type, device_model, os, browser, ip_address, country, region, city }) {
         try {
             await pool.execute(
-                `INSERT INTO visitors (visitor_id, device_type, device_model, os, browser, ip_address, visit_count) 
-                 VALUES (?, ?, ?, ?, ?, ?, 1)
-                 ON DUPLICATE KEY UPDATE 
+                `INSERT INTO visitors (visitor_id, device_type, device_model, os, browser, ip_address, country, region, city, visit_count)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+                 ON DUPLICATE KEY UPDATE
                  last_visit = CURRENT_TIMESTAMP,
-                 visit_count = visit_count + 1`,
-                [visitor_id, device_type, device_model, os, browser, ip_address]
+                 visit_count = visit_count + 1,
+                 country = VALUES(country),
+                 region = VALUES(region),
+                 city = VALUES(city)`,
+                [visitor_id, device_type, device_model, os, browser, ip_address, country, region, city]
             );
         } catch (err) {
             console.error('Track visitor error:', err);
