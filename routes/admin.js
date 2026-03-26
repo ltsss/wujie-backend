@@ -84,14 +84,16 @@ router.use(requireRole('admin'));
 
 // ========== 销售管理 ==========
 
-// 获取所有销售
+// 获取所有销售（从 users 表查询所有 admin 和 sales 角色的用户）
 router.get('/sales', async (req, res) => {
     try {
-        const { is_active } = req.query;
-        const sales = await SalesModel.findAll({ 
-            is_active: is_active !== undefined ? is_active === 'true' : null 
-        });
-        res.json({ success: true, data: sales });
+        const [rows] = await pool.execute(
+            `SELECT id, username, name, role, phone, email, is_active, created_at
+             FROM users
+             WHERE role IN ('admin', 'sales')
+             ORDER BY created_at DESC`
+        );
+        res.json({ success: true, data: rows });
     } catch (error) {
         console.error('获取销售列表错误:', error);
         res.status(500).json({ success: false, message: '服务器错误' });

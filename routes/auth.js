@@ -3,6 +3,7 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const { generateToken, authenticateToken, requireRole } = require('../middleware/auth');
 const UserModel = require('../models/User');
+const SalesModel = require('../models/Sales');
 const { LogModel } = require('../models/Log');
 
 // 登录
@@ -169,6 +170,22 @@ router.post('/register', [
             phone,
             email
         });
+
+        // 如果是销售角色，同时在 sales 表创建记录
+        if (role === 'sales') {
+            try {
+                await SalesModel.create({
+                    user_id: userId,
+                    name: name,
+                    phone: phone,
+                    email: email,
+                    daily_limit: 10
+                });
+            } catch (salesError) {
+                console.error('创建销售记录失败:', salesError);
+                // 不影响用户创建成功
+            }
+        }
 
         // 记录日志
         await LogModel.create({
