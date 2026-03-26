@@ -229,12 +229,7 @@ router.get('/users', authenticateToken, requireRole('admin'), async (req, res) =
 // 更新用户信息（仅管理员）
 router.put('/users/:id', [
     authenticateToken,
-    requireRole('admin'),
-    body('name').optional().trim(),
-    body('role').optional().isIn(['admin', 'sales']),
-    body('is_active').optional().isBoolean(),
-    body('phone').optional().trim(),
-    body('email').optional().trim()
+    requireRole('admin')
 ], async (req, res) => {
     try {
         const { id } = req.params;
